@@ -3,7 +3,7 @@ import { Toaster } from 'react-hot-toast';
 import Layout from './components/layout/Layout';
 import { AlarmGrid } from './components/alarms/AlarmGrid';
 import { AlarmStats } from './components/alarms/AlarmStats';
-import { AlarmFilters } from 'components/alarms/AlarmFilters';
+import { AlarmFilters } from './components/alarms/AlarmFilters';
 
 const queryClient = new QueryClient();
 

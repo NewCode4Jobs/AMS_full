@@ -15,6 +15,7 @@ else:
     engine = None
 
 # SQL Session setup (for SQLite and PostgreSQL)
+SessionLocal = None
 if engine:
     SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()

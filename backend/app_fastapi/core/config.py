@@ -9,7 +9,8 @@ ROOT_DIR = Path(__file__).parent.parent.parent.parent
 
 class Settings(BaseSettings):
     # Database Settings
-    DB_TYPE: Literal["sqlite", "postgres", "mongodb"] = "sqlite"
+    # DB_TYPE: Literal["sqlite", "postgres", "mongodb"] = "sqlite"
+    DB_TYPE: str = "sqlite"
     
     # SQLite Settings
     SQLITE_DB: str = str(ROOT_DIR / "data" / "alarm_system.db")
