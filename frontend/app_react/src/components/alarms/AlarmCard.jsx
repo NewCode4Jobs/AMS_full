@@ -1,27 +1,43 @@
 import { format } from 'date-fns';
-import { Badge } from '../ui/Badge';
+import { Card, Badge, Button } from 'react-bootstrap';
 
-export function AlarmCard({ alarm }) {
-  const severityColors = {
-    critical: 'bg-alarm-critical',
-    high: 'bg-alarm-high',
-    medium: 'bg-alarm-medium',
-    low: 'bg-alarm-low',
+export function AlarmCard({ alarm, onEdit }) {
+  const severityVariants = {
+    critical: 'danger',
+    high: 'warning',
+    medium: 'info',
+    low: 'success',
   };
 
   return (
-    <div className="rounded-lg bg-gray-800 p-4 shadow-lg transition-all hover:transform hover:scale-[1.02]">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-white">{alarm.name}</h3>
-        <Badge className={severityColors[alarm.severity]}>
-          {alarm.severity}
-        </Badge>
-      </div>
-      <p className="mt-2 text-gray-300">{alarm.description}</p>
-      <div className="mt-4 flex items-center justify-between text-sm text-gray-400">
-        <span>{alarm.source}</span>
-        <span>{format(new Date(alarm.timestamp), 'PPp')}</span>
-      </div>
-    </div>
+    <Card bg="white" text="white" className="h-100">
+      <Card.Body>
+        <div className="d-flex justify-content-between align-items-start">
+          <div>
+            <Card.Title>{alarm.name}</Card.Title>
+            <Badge bg={severityVariants[alarm.severity]} className="me-2">
+              {alarm.severity}
+            </Badge>
+            <Badge bg="secondary">{alarm.status}</Badge>
+          </div>
+          <Button
+            variant="outline-light"
+            size="sm"
+            onClick={() => onEdit(alarm)}
+          >
+            Edit
+          </Button>
+        </div>
+        <Card.Text className="text-muted mt-2">
+          {alarm.description}
+        </Card.Text>
+        <div className="d-flex justify-content-between align-items-center mt-3">
+          <small className="text-muted">{alarm.source}</small>
+          <small className="text-muted">
+            {format(new Date(alarm.timestamp), 'PPp')}
+          </small>
+        </div>
+      </Card.Body>
+    </Card>
   );
 }

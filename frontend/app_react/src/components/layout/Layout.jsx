@@ -6,12 +6,26 @@ export default function Layout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-gray-900">
+    <div className="d-flex flex-column flex-grow-1">
+      {/* Header */}
       <Header onMenuClick={() => setSidebarOpen(true)} />
-      <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-      <main className="p-4 lg:ml-64">
-        <div className="mx-auto max-w-7xl">{children}</div>
-      </main>
+
+      {/* Main content area */}
+      <div className="d-flex flex-grow-1 position-relative">
+        {/* Sidebar */}
+        <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+
+        {/* Main content */}
+        <main 
+          className="flex-grow-1 p-4 overflow-auto"
+          style={{ 
+            marginLeft: sidebarOpen ? '16rem' : '0',
+            transition: 'margin-left 0.3s ease-in-out'
+          }}
+        >
+          {children}
+        </main>
+      </div>
     </div>
   );
 }

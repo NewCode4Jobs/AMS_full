@@ -54,6 +54,39 @@ async def create_user(
 ):
     return await repo.create_user(user)
 
+@app.get("/api/v1/alarms/stats")
+async def get_alarm_stats(repo=Depends(get_repository)):
+    # Get all alarms
+    alarms = await repo.get_all_alarms()
+    
+    # Calculate statistics
+    total_alarms = len(alarms)
+    severity_counts = {
+        "critical": len([a for a in alarms if a.severity == "critical"]),
+        "high": len([a for a in alarms if a.severity == "high"]),
+        "medium": len([a for a in alarms if a.severity == "medium"]),
+        "low": len([a for a in alarms if a.severity == "low"])
+    }
+    
+    status_counts = {
+        "active": len([a for a in alarms if a.status == "active"]),
+        "acknowledged": len([a for a in alarms if a.status == "acknowledged"]),
+        "resolved": len([a for a in alarms if a.status == "resolved"])
+    }
+    
+    source_counts = {
+        "system": len([a for a in alarms if a.source == "system"]),
+        "application": len([a for a in alarms if a.source == "application"]),
+        "security": len([a for a in alarms if a.source == "security"])
+    }
+    
+    return {
+        "total": total_alarms,
+        "by_severity": severity_counts,
+        "by_status": status_counts,
+        "by_source": source_counts
+    }
+
 @app.get("/")
 def read_root():
     return {

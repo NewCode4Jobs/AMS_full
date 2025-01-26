@@ -1,34 +1,30 @@
 // src/components/layout/Header.jsx
-import { useState } from 'react';
+import { Button } from 'react-bootstrap';
 
 export default function Header({ onMenuClick }) {
-  const [notifications, setNotifications] = useState(3);
-
   return (
-    <header className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 border-b border-gray-700 bg-gray-800 px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8">
-      <button
-        type="button"
-        className="-m-2.5 p-2.5 text-gray-400 lg:hidden"
-        onClick={onMenuClick}
-      >
-        <span className="sr-only">Open sidebar</span>
-      </button>
-
-      <div className="flex flex-1 gap-x-4 self-stretch lg:gap-x-6">
-        <div className="relative flex flex-1"></div>
-        
-        <div className="flex items-center gap-x-4 lg:gap-x-6">
-          <button 
-            type="button" 
-            className="relative -m-2.5 p-2.5 text-gray-400 hover:text-gray-300"
-          >
-            <span className="sr-only">View notifications</span>
-            {notifications > 0 && (
-              <span className="absolute -top-1 -right-1 bg-red-600 text-white rounded-full px-1.5 py-0.5 text-xs">
-                {notifications}
-              </span>
-            )}
-          </button>
+    <header className="bg-white border-bottom shadow-sm">
+      <div className="container-fluid">
+        <div className="d-flex justify-content-between align-items-center py-3">
+          <div className="d-flex align-items-center">
+            <Button
+              variant="link"
+              className="text-dark p-0 me-3"
+              onClick={onMenuClick}
+            >
+              <i className="bi bi-list fs-4"></i>
+            </Button>
+            <h5 className="mb-0">Alarm Management System</h5>
+          </div>
+          
+          <div className="d-flex align-items-center">
+            <Button variant="outline-primary" size="sm" className="me-2">
+              <i className="bi bi-bell"></i>
+            </Button>
+            <Button variant="outline-primary" size="sm">
+              <i className="bi bi-gear"></i>
+            </Button>
+          </div>
         </div>
       </div>
     </header>

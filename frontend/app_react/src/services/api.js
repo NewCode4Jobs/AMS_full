@@ -1,26 +1,39 @@
 import axios from 'axios';
+import { API_CONFIG } from '../config/api';
 
-const api = axios.create({
-  baseURL: 'http://localhost:8000/api/v1',
+// Create axios instance with base configuration
+const apiClient = axios.create({
+  baseURL: API_CONFIG.BASE_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
 });
 
 export const alarmService = {
   getAlarms: async () => {
-    const { data } = await api.get('/alarms');
-    return data;
+    const response = await apiClient.get('/alarms');
+    return response.data;
   },
-  
-  createAlarm: async (alarm) => {
-    const { data } = await api.post('/alarms', alarm);
-    return data;
+
+  getAlarmStats: async () => {
+    console.log('Fetching stats...');
+    const response = await apiClient.get('/alarms/stats');
+    console.log('Stats: ', response.data);
+    return response.data;
   },
-  
-  updateAlarm: async (id, alarm) => {
-    const { data } = await api.put(`/alarms/${id}`, alarm);
-    return data;
+
+  createAlarm: async (alarmData) => {
+    const response = await apiClient.post('/alarms', alarmData);
+    return response.data;
   },
-  
+
+  updateAlarm: async (id, alarmData) => {
+    const response = await apiClient.put(`/alarms/${id}`, alarmData);
+    return response.data;
+  },
+
   deleteAlarm: async (id) => {
-    await api.delete(`/alarms/${id}`);
-  },
+    const response = await apiClient.delete(`/alarms/${id}`);
+    return response.data;
+  }
 };

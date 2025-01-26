@@ -1,68 +1,91 @@
-// src/components/alarms/AlarmFilters.jsx
-import { useState } from 'react';
-import { Button } from '../ui/Button';
+import { Form } from 'react-bootstrap';
+import { useQueryClient } from '@tanstack/react-query';
+import { useState, useEffect } from 'react';
 
 export function AlarmFilters() {
+  const queryClient = useQueryClient();
   const [filters, setFilters] = useState({
-    severity: 'all',
-    source: 'all',
-    status: 'all'
+    severity: '',
+    status: '',
+    source: '',
+    search: ''
   });
 
-  const severityOptions = [
-    { value: 'all', label: 'All Severities' },
-    { value: 'critical', label: 'Critical' },
-    { value: 'high', label: 'High' },
-    { value: 'medium', label: 'Medium' },
-    { value: 'low', label: 'Low' }
-  ];
+  // Apply filters with debounce
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      queryClient.setQueryData(['alarmFilters'], filters);
+    }, 300);
 
-  const handleFilterChange = (key, value) => {
+    return () => clearTimeout(timer);
+  }, [filters, queryClient]);
+
+  const handleFilterChange = (e) => {
+    const { name, value } = e.target;
     setFilters(prev => ({
       ...prev,
-      [key]: value
+      [name]: value
     }));
   };
 
   return (
-    <div className="bg-gray-800 p-4 rounded-lg">
-      <div className="flex flex-wrap items-center gap-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-300 mb-1">
-            Severity
-          </label>
-          <select
-            value={filters.severity}
-            onChange={(e) => handleFilterChange('severity', e.target.value)}
-            className="w-full bg-gray-700 text-white rounded-md border-gray-600 focus:ring-blue-500 focus:border-blue-500"
-          >
-            {severityOptions.map(option => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </div>
+    <div>
+      <h5 className="mb-4">Filters</h5>
+      <Form>
+        <Form.Group className="mb-3">
+          <Form.Label>Search</Form.Label>
+          <Form.Control
+            type="text"
+            name="search"
+            value={filters.search}
+            onChange={handleFilterChange}
+            placeholder="Search by name or description"
+          />
+        </Form.Group>
 
-        <div className="flex items-end gap-2">
-          <Button 
-            variant="primary" 
-            onClick={() => {/* Apply filters */}}
+        <Form.Group className="mb-3">
+          <Form.Label>Severity</Form.Label>
+          <Form.Select
+            name="severity"
+            value={filters.severity}
+            onChange={handleFilterChange}
           >
-            Apply Filters
-          </Button>
-          <Button 
-            variant="secondary" 
-            onClick={() => setFilters({
-              severity: 'all',
-              source: 'all',
-              status: 'all'
-            })}
+            <option value="">All Severities</option>
+            <option value="critical">Critical</option>
+            <option value="high">High</option>
+            <option value="medium">Medium</option>
+            <option value="low">Low</option>
+          </Form.Select>
+        </Form.Group>
+
+        <Form.Group className="mb-3">
+          <Form.Label>Status</Form.Label>
+          <Form.Select
+            name="status"
+            value={filters.status}
+            onChange={handleFilterChange}
           >
-            Reset
-          </Button>
-        </div>
-      </div>
+            <option value="">All Statuses</option>
+            <option value="active">Active</option>
+            <option value="acknowledged">Acknowledged</option>
+            <option value="resolved">Resolved</option>
+          </Form.Select>
+        </Form.Group>
+
+        <Form.Group className="mb-3">
+          <Form.Label>Source</Form.Label>
+          <Form.Select
+            name="source"
+            value={filters.source}
+            onChange={handleFilterChange}
+          >
+            <option value="">All Sources</option>
+            <option value="system">System</option>
+            <option value="application">Application</option>
+            <option value="security">Security</option>
+          </Form.Select>
+        </Form.Group>
+      </Form>
     </div>
   );
 }
