@@ -2,6 +2,7 @@ from typing import Protocol, Optional, AsyncGenerator
 from sqlalchemy.orm import Session
 from motor.motor_asyncio import AsyncIOMotorClient
 from functools import lru_cache
+from contextlib import asynccontextmanager
 
 from ..models.alarm import Alarm
 from ..core.config import settings
@@ -36,6 +37,7 @@ class DatabaseAdapter:
         if not self._mongo_client:
             self._mongo_client = AsyncIOMotorClient(settings.MONGODB_URL)
 
+    @asynccontextmanager
     async def get_repository(self) -> AsyncGenerator[BaseRepository, None]:
         """Get the appropriate repository based on configuration."""
         try:
@@ -51,18 +53,14 @@ class DatabaseAdapter:
                     yield PostgresRepository(db)
                 finally:
                     db.close()
-            else:  # mongodb
+            elif settings.DB_TYPE == "mongodb":
                 if not self._mongo_client:
                     await self.init_mongodb()
-                db = self._mongo_client[settings.MONGODB_DB_NAME]
-                try:
-                    yield MongoRepository(db)
-                finally:
-                    pass  # MongoDB cleanup if needed
+                yield MongoRepository(self._mongo_client[settings.MONGODB_DB_NAME])
+            else:
+                raise ValueError(f"Unsupported database type: {settings.DB_TYPE}")
         except Exception as e:
-            # Log the error
-            print(f"Error getting repository: {e}")
-            raise
+            raise e
 
     async def close(self):
         """Close all database connections."""

@@ -96,3 +96,31 @@ class SQLiteRepository(BaseRepository):
             return UserResponse.from_orm(db_user) if db_user else None
         except SQLAlchemyError as e:
             raise Exception(f"Error getting user by email: {str(e)}")
+
+    async def get_all_alarms(self, skip: int = 0, limit: int = 100) -> List[AlarmResponse]:
+        try:
+            alarms = self.db.query(Alarm).offset(skip).limit(limit).all()
+            return [AlarmResponse.from_orm(alarm) for alarm in alarms]
+        except SQLAlchemyError as e:
+            raise Exception(f"Error getting all alarms: {str(e)}")
+
+    async def get_all_users(self, skip: int = 0, limit: int = 100) -> List[UserResponse]:
+        try:
+            users = self.db.query(User).offset(skip).limit(limit).all()
+            return [UserResponse.from_orm(user) for user in users]
+        except SQLAlchemyError as e:
+            raise Exception(f"Error getting all users: {str(e)}")
+
+    async def acknowledge_alarm(self, alarm_id: int) -> Optional[AlarmResponse]:
+        try:
+            db_alarm = self.db.query(Alarm).filter(Alarm.id == alarm_id).first()
+            if not db_alarm:
+                return None
+            
+            db_alarm.status = "acknowledged"
+            self.db.commit()
+            self.db.refresh(db_alarm)
+            return AlarmResponse.from_orm(db_alarm)
+        except SQLAlchemyError as e:
+            self.db.rollback()
+            raise Exception(f"Error acknowledging alarm: {str(e)}")

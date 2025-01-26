@@ -1,5 +1,3 @@
-// src/components/alarms/AlarmStats.jsx
-import { ChartBarIcon } from '@heroicons/react/solid';
 
 export function AlarmStats() {
   const stats = [
@@ -31,7 +29,6 @@ export function AlarmStats() {
             <p className="text-sm font-medium text-gray-400">{stat.name}</p>
             <p className={`text-3xl font-bold ${stat.color}`}>{stat.value}</p>
           </div>
-          <ChartBarIcon className={`h-8 w-8 ${stat.color} opacity-50`} />
         </div>
       ))}
     </div>

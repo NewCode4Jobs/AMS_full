@@ -1,0 +1,83 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python: FastAPI",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "uvicorn",
+            "args": [
+                "backend.app_fastapi.main:app",
+                "--reload",
+                "--port",
+                "8000",
+                "--host",
+                "0.0.0.0"
+            ],
+            "jinja": true,
+            "justMyCode": false,
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}"
+            },
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "chrome",
+            "request": "launch",
+            "name": "Launch Chrome against React app",
+            "url": "http://localhost:5173",
+            "webRoot": "${workspaceFolder}/frontend/app_react",
+            "sourceMapPathOverrides": {
+                "webpack:///src/*": "${webRoot}/src/*"
+            }
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Debug Vite Dev Server",
+            "autoAttachChildProcesses": true,
+            "skipFiles": ["<node_internals>/**"],
+            "program": "${workspaceFolder}/frontend/app_react/node_modules/vite/bin/vite.js",
+            "cwd": "${workspaceFolder}/frontend/app_react",
+            "args": ["--port", "5173"]
+        },
+        {
+            "name": "Python HTTP Server (Vanilla Frontend)",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "http.server",
+            "args": ["8080", "--directory", "${workspaceFolder}/frontend/vanilla"],
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}"
+            }
+        },
+        {
+            "name": "Debug React in WindsurfIDE",
+            "type": "node-terminal",
+            "request": "launch",
+            "command": "npm run dev",
+            "cwd": "${workspaceFolder}/frontend/app_react",
+            "skipFiles": ["<node_internals>/**"],
+            "outFiles": ["${workspaceFolder}/frontend/app_react/dist/**/*.js"],
+            "console": "integratedTerminal"
+        }
+    ],
+    "compounds": [
+        {
+            "name": "Debug React + Server",
+            "configurations": ["Python: FastAPI", "Debug Vite Dev Server", "Launch Chrome against React app"]
+        },
+        {
+            "name": "Debug FastAPI + Vanilla Frontend",
+            "configurations": ["Python: FastAPI", "Python HTTP Server (Vanilla Frontend)"]
+        },
+        {
+            "name": "Debug Full Stack (WindsurfIDE)",
+            "configurations": ["Python: FastAPI", "Debug React in WindsurfIDE"]
+        }
+    ]
+}
