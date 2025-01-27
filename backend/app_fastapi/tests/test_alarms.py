@@ -84,18 +84,23 @@ def test_get_alarm_stats(client, sample_alarm):
     alarms = [
         {**sample_alarm, "severity": "critical"},
         {**sample_alarm, "severity": "high"},
-        {**sample_alarm, "severity": "high"},
         {**sample_alarm, "severity": "medium"},
+        {**sample_alarm, "severity": "low"}
     ]
+    
     for alarm in alarms:
         client.post("/api/v1/alarms/", json=alarm)
     
+    # Get updated stats
     response = client.get("/api/v1/alarms/stats")
-    assert response.status_code == status.HTTP_200_OK
+    assert response.status_code == 200
     stats = response.json()
     
     assert stats["total"] == 4
-    assert stats["by_severity"]["critical"] == 1
-    assert stats["by_severity"]["high"] == 2
-    assert stats["by_severity"]["medium"] == 1
-    assert stats["by_severity"]["low"] == 0
+    assert stats["by_severity"] == {
+        "critical": 1,
+        "high": 1,
+        "medium": 1,
+        "low": 1
+    }
+    assert stats["by_status"]["active"] == 4  # Assuming default status is "active"

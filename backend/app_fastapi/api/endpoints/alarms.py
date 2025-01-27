@@ -5,6 +5,7 @@ from typing import List
 from ...database.connection import get_db
 from ...models.alarm import Alarm
 from ...schemas.alarm import AlarmCreate, AlarmResponse, AlarmUpdate
+from ...dependencies import get_repository
 
 router = APIRouter()
 
@@ -44,3 +45,29 @@ def acknowledge_alarm(alarm_id: int, db: Session = Depends(get_db)):
     alarm.acknowledged = True
     db.commit()
     return {"status": "success", "message": "Alarm acknowledged"}
+
+@router.get("/alarms/stats")
+async def get_alarm_stats(repo=Depends(get_repository)):
+    # Get all alarms
+    alarms = await repo.get_all_alarms()
+    
+    # Calculate statistics
+    total_alarms = len(alarms)
+    severity_counts = {
+        "critical": len([a for a in alarms if a.severity == "critical"]),
+        "high": len([a for a in alarms if a.severity == "high"]),
+        "medium": len([a for a in alarms if a.severity == "medium"]),
+        "low": len([a for a in alarms if a.severity == "low"])
+    }
+    
+    status_counts = {
+        "active": len([a for a in alarms if a.status == "active"]),
+        "resolved": len([a for a in alarms if a.status == "resolved"]),
+        "acknowledged": len([a for a in alarms if a.acknowledged])
+    }
+    
+    return {
+        "total": total_alarms,
+        "by_severity": severity_counts,
+        "by_status": status_counts
+    }

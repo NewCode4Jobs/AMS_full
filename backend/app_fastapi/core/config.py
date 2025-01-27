@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     # DB_TYPE: Literal["sqlite", "postgres", "mongodb"] = "sqlite"
     DB_TYPE: str = "sqlite"
     
+    CORS_ORIGINS: list[str] = ["http://localhost:3000", "http://localhost:5173", "http://localhost:8080"]
     # SQLite Settings
     SQLITE_DB: str = str(ROOT_DIR / "data" / "alarm_system.db")
     

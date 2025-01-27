@@ -25,6 +25,25 @@
             "cwd": "${workspaceFolder}"
         },
         {
+            "name": "Python: Debug Tests",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/.venv/Scripts/pytest.exe",
+            "args": [
+                "-v",
+                "--no-cov",
+                "${workspaceFolder}/backend/app_fastapi/tests/",
+                "-s"
+            ],
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}"
+            },
+            "purpose": ["debug-test"]
+        },
+        {
             "type": "chrome",
             "request": "launch",
             "name": "Launch Chrome against React app",
@@ -54,7 +73,7 @@
             "skipFiles": ["<node_internals>/**"],
             "outFiles": ["${workspaceFolder}/frontend/app_react/dist/**/*.js"],
             "console": "integratedTerminal"
-        }
+        },
     ],
     "compounds": [
         {
