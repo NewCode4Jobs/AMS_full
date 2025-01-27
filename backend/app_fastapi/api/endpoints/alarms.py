@@ -4,7 +4,7 @@ from typing import List
 
 from ...database.connection import get_db
 from ...models.alarm import Alarm
-from ...schemas.alarm import AlarmCreate, AlarmResponse
+from ...schemas.alarm import AlarmCreate, AlarmResponse, AlarmUpdate
 
 router = APIRouter()
 
@@ -21,6 +21,20 @@ def create_alarm(alarm: AlarmCreate, db: Session = Depends(get_db)):
     db.refresh(db_alarm)
     return db_alarm
 
+@router.put("/alarms/{alarm_id}", response_model=AlarmResponse)
+def update_alarm(alarm_id: int, alarm: AlarmUpdate, db: Session = Depends(get_db)):
+    db_alarm = db.query(Alarm).filter(Alarm.id == alarm_id).first()
+    if not db_alarm:
+        raise HTTPException(status_code=404, detail="Alarm not found")
+    
+    # Update alarm fields
+    for field, value in alarm.dict(exclude_unset=True).items():
+        setattr(db_alarm, field, value)
+    
+    db.commit()
+    db.refresh(db_alarm)
+    return db_alarm
+
 @router.put("/alarms/{alarm_id}/acknowledge")
 def acknowledge_alarm(alarm_id: int, db: Session = Depends(get_db)):
     alarm = db.query(Alarm).filter(Alarm.id == alarm_id).first()
@@ -29,4 +43,4 @@ def acknowledge_alarm(alarm_id: int, db: Session = Depends(get_db)):
     
     alarm.acknowledged = True
     db.commit()
-    return {"message": "Alarm acknowledged"}
+    return {"status": "success", "message": "Alarm acknowledged"}

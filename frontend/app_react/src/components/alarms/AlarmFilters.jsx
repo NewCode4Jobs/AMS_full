@@ -1,6 +1,6 @@
 import { Form } from 'react-bootstrap';
 import { useQueryClient } from '@tanstack/react-query';
-import { useState, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 
 export function AlarmFilters() {
   const queryClient = useQueryClient();
@@ -11,22 +11,18 @@ export function AlarmFilters() {
     search: ''
   });
 
-  // Apply filters with debounce
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      queryClient.setQueryData(['alarmFilters'], filters);
-    }, 300);
-
-    return () => clearTimeout(timer);
-  }, [filters, queryClient]);
-
-  const handleFilterChange = (e) => {
+  const handleFilterChange = useCallback((e) => {
     const { name, value } = e.target;
-    setFilters(prev => ({
-      ...prev,
+    console.log('handleFilterChange: ', name, '-', value, '-');
+    
+    const newFilters = {
+      ...filters,
       [name]: value
-    }));
-  };
+    };
+    
+    setFilters(newFilters);
+    queryClient.setQueryData(['alarmFilters'], newFilters);
+  }, [filters, queryClient]);
 
   return (
     <div>

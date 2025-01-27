@@ -3,7 +3,6 @@ import { useAlarmStats } from '../../hooks/useAlarms';
 
 export function AlarmStats() {
   const { data: stats, isLoading, error } = useAlarmStats();
-  console.log('stats=', stats);
 
   if (isLoading) {
     return <div>Loading stats...</div>;

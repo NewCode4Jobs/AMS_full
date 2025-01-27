@@ -35,16 +35,6 @@
             }
         },
         {
-            "type": "node",
-            "request": "launch",
-            "name": "Debug Vite Dev Server",
-            "autoAttachChildProcesses": true,
-            "skipFiles": ["<node_internals>/**"],
-            "program": "${workspaceFolder}/frontend/app_react/node_modules/vite/bin/vite.js",
-            "cwd": "${workspaceFolder}/frontend/app_react",
-            "args": ["--port", "5173"]
-        },
-        {
             "name": "Python HTTP Server (Vanilla Frontend)",
             "type": "debugpy",
             "request": "launch",
@@ -68,15 +58,15 @@
     ],
     "compounds": [
         {
-            "name": "Debug React + Server",
+            "name": "Group Debug React + Server",
             "configurations": ["Python: FastAPI", "Debug Vite Dev Server", "Launch Chrome against React app"]
         },
         {
-            "name": "Debug FastAPI + Vanilla Frontend",
+            "name": "Group Debug FastAPI + Vanilla Frontend",
             "configurations": ["Python: FastAPI", "Python HTTP Server (Vanilla Frontend)"]
         },
         {
-            "name": "Debug Full Stack (WindsurfIDE)",
+            "name": "Group Debug Full Stack (WindsurfIDE)",
             "configurations": ["Python: FastAPI", "Debug React in WindsurfIDE"]
         }
     ]
