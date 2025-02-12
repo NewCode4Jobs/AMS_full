@@ -1,5 +1,7 @@
 from datetime import datetime
 from backend.app_fastapi.models import Alarm
+from sqlalchemy import select
+
 
 def test_alarm_model_creation(test_db):
     alarm = Alarm(
@@ -25,6 +27,7 @@ def test_alarm_model_creation(test_db):
     assert alarm.status == "active"
     assert alarm.acknowledged is False
 
+
 def test_alarm_model_update(test_db):
     # Create an alarm
     alarm = Alarm(
@@ -44,6 +47,8 @@ def test_alarm_model_update(test_db):
     test_db.commit()
     
     # Query the alarm
-    updated_alarm = test_db.query(Alarm).filter(Alarm.id == alarm.id).first()
+    query = select(Alarm).filter(Alarm.id == alarm.id)
+    result = test_db.execute(query)
+    updated_alarm = result.scalar_one_or_none()
     assert updated_alarm.severity == "critical"
     assert updated_alarm.acknowledged is True

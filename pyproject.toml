@@ -4,27 +4,48 @@ name = "alarm-management-system"
 version = "0.1.0"
 description = "Alarm Management System"
 dependencies = [
+    # Core Web Framework
     "fastapi>=0.109.0",
     "uvicorn>=0.27.0",
+
+    # Database Libraries
     "sqlalchemy>=2.0.25",
-    "motor>=3.3.2",
+    "asyncpg>=0.29.0",      # Async PostgreSQL driver
+    "aiosqlite>=0.19.0",    # Async SQLite driver
+    "motor>=3.3.2",         # Async MongoDB driver
+    "pymongo>=4.11.1",      # MongoDB driver
+
+    # Data Validation and Settings
     "pydantic>=2.5.3",
     "pydantic-settings>=2.1.0",
+    "pydantic[email]",
+
+    # Authentication and Security
     "python-jose>=3.3.0",
     "passlib>=1.7.4",
     "python-multipart>=0.0.6",
-    "pydantic[email]",
-    "pymongo>=4.11.1",
+
+    # Utilities
+    "python-dateutil>=2.8.2",
+    "pytz>=2024.1",
 ]
 
 [project.optional-dependencies]
 dev = [
+    # Testing
     "pytest>=7.4.4",
+    "pytest-asyncio>=0.23.2",
+    "httpx>=0.26.0",
+
+    # Code Quality
     "black>=23.12.1",
     "isort>=5.13.2",
     "mypy>=1.8.0",
-    "httpx",
-    "pytest-asyncio"
+    "ruff>=0.2.0",  # Modern linter
+
+    # Type Checking
+    "types-python-dateutil",
+    "types-pytz",
 ]
 
 [build-system]
@@ -34,10 +55,20 @@ build-backend = "hatchling.build"
 [tool.hatch.build.targets.wheel]
 packages = ["backend"]
 
-[tool.uv.scripts]
+[tool.scripts]
 dev-backend = "uvicorn backend.app_fastapi.main:app --reload --port 8000"
 dev-frontend-vanilla = "python -m http.server --bind=0.0.0.0:3000"
 dev-frontend-react = "cd frontend/app_react && npm run dev"
 format = "black backend tests"
 lint = "mypy backend tests"
 test = "pytest tests"
+
+# Ruff configuration for linting
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+
+# Black configuration for formatting
+[tool.black]
+line-length = 120
+target-version = ['py311']

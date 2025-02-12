@@ -4,6 +4,8 @@
 
 This test suite supports multiple database types. You can specify the database type using the `TEST_DB_TYPE` environment variable.
 
+pytest backend/app_fastapi/tests/ -v
+
 ### Supported Database Types
 - `sqlite` (default)
 - `postgres`

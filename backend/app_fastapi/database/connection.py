@@ -1,62 +1,69 @@
-from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.ext.declarative import declarative_base
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
 
 from backend.app_fastapi.core.config import settings
 
-# SQLite setup
-if settings.DB_TYPE == "sqlite":
-    engine = create_engine(settings.SQLITE_URL, connect_args={"check_same_thread": False})
-# PostgreSQL setup
-elif settings.DB_TYPE == "postgres":
-    engine = create_engine(settings.POSTGRES_URL)
-else:
-    engine = None
-
-# SQL Session setup (for SQLite and PostgreSQL)
-SessionLocal = None
-if engine:
-    SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+# Create base declarative class for models
 Base = declarative_base()
 
-# MongoDB setup
-if settings.DB_TYPE == "mongodb":
-    mongo_client = AsyncIOMotorClient(settings.MONGODB_URL)
-    mongodb = mongo_client[settings.MONGODB_DB_NAME]
+# Async database engine setup
+if settings.DB_TYPE == "sqlite":
+    # Explicitly use aiosqlite for async SQLite support
+    engine = create_async_engine(
+        settings.SQLITE_URL, 
+        connect_args={"check_same_thread": False},
+        echo=True,
+        future=True
+    )
+elif settings.DB_TYPE == "postgres":
+    # Use asyncpg for async PostgreSQL support
+    engine = create_async_engine(
+        settings.POSTGRES_URL, 
+        echo=True,
+        future=True
+    )
 else:
-    mongo_client = None
-    mongodb = None
+    # Placeholder for other database types if needed
+    engine = None
 
-def get_db():
-    """Get SQL database session (SQLite or PostgreSQL)."""
-    if not engine:
-        raise Exception("SQL database not configured")
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+# Create async session factory
+async_session = sessionmaker(
+    engine, 
+    class_=AsyncSession, 
+    expire_on_commit=False
+)
 
-def get_mongodb():
+async def get_db():
+    """
+    Dependency function to get a database session.
+    
+    Yields:
+        AsyncSession: A database session for the current request.
+    """
+    async with async_session() as session:
+        try:
+            yield session
+        finally:
+            await session.close()
+
+async def get_mongodb():
     """Get MongoDB database instance."""
-    if not mongodb:
-        raise Exception("MongoDB not configured")
-    return mongodb
+    if settings.DB_TYPE == "mongodb":
+        client = AsyncIOMotorClient(settings.MONGODB_URL)
+        return client[settings.MONGODB_DB_NAME]
+    return None
 
 async def init_db():
     """Initialize database based on configuration."""
     if settings.DB_TYPE in ["sqlite", "postgres"]:
         # Create all tables in SQLite/PostgreSQL
-        Base.metadata.create_all(bind=engine)
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
     elif settings.DB_TYPE == "mongodb":
         # Create indexes or initial setup for MongoDB if needed
-        await mongodb.alarms.create_index("email", unique=True)
-        await mongodb.users.create_index("email", unique=True)
-
-async def close_db_connections():
-    """Close all database connections."""
-    if settings.DB_TYPE == "mongodb" and mongo_client:
-        mongo_client.close()
-    # SQLite/PostgreSQL connections are handled by the session
+        mongodb = await get_mongodb()
+        if mongodb:
+            await mongodb.alarms.create_index("email", unique=True)

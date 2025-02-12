@@ -3,11 +3,13 @@ from motor.motor_asyncio import AsyncIOMotorDatabase
 from datetime import datetime, timezone
 from bson import ObjectId
 from ..schemas import AlarmCreate, AlarmResponse, UserCreate, UserResponse
-from .base import BaseRepository
+from .base import AlarmRepository, UserRepository, BaseAlarmRepository, BaseUserRepository
 from ..adapters.data_adapter import DataAdapter
 
 
-class MongoRepository(BaseRepository):
+class MongoRepository(BaseAlarmRepository, BaseUserRepository, AlarmRepository, UserRepository):
+    """MongoDB repository implementing both alarm and user operations."""
+    
     def __init__(self, db: AsyncIOMotorDatabase, data_adapter: DataAdapter):
         """
         Initialize MongoDB repository with database connection and data adapter.
@@ -28,11 +30,14 @@ class MongoRepository(BaseRepository):
         created_alarm = await self.alarms_collection.find_one({"_id": result.inserted_id})
         return await self.data_adapter.convert_from_storage_format(created_alarm)
 
-    async def get_alarm(self, alarm_id: int) -> Optional[AlarmResponse]:
-        alarm = await self.alarms_collection.find_one({"_id": ObjectId(str(alarm_id))})
-        if alarm:
-            return await self.data_adapter.convert_from_storage_format(alarm)
-        return None
+    async def get_alarm(self, alarm_id: str) -> Optional[AlarmResponse]:
+        try:
+            alarm = await self.alarms_collection.find_one({"_id": ObjectId(alarm_id)})
+            if alarm:
+                return await self.data_adapter.convert_from_storage_format(alarm)
+            return None
+        except:
+            return None
 
     async def get_all_alarms(self, skip: int = 0, limit: int = 100) -> List[AlarmResponse]:
         cursor = self.alarms_collection.find().skip(skip).limit(limit)
@@ -42,47 +47,57 @@ class MongoRepository(BaseRepository):
             alarms.append(converted_alarm)
         return alarms
 
-    async def update_alarm(self, alarm_id: int, alarm: AlarmCreate) -> Optional[AlarmResponse]:
+    async def update_alarm(self, alarm_id: str, alarm: AlarmCreate) -> Optional[AlarmResponse]:
         alarm_dict = await self.data_adapter.convert_to_storage_format(alarm)
         result = await self.alarms_collection.update_one(
-            {"_id": ObjectId(str(alarm_id))},
+            {"_id": ObjectId(alarm_id)},
             {"$set": alarm_dict}
         )
         if result.modified_count:
-            updated_alarm = await self.alarms_collection.find_one({"_id": ObjectId(str(alarm_id))})
+            updated_alarm = await self.alarms_collection.find_one({"_id": ObjectId(alarm_id)})
             return await self.data_adapter.convert_from_storage_format(updated_alarm)
         return None
 
-    async def delete_alarm(self, alarm_id: int) -> bool:
-        result = await self.alarms_collection.delete_one({"_id": ObjectId(str(alarm_id))})
-        return result.deleted_count > 0
+    async def delete_alarm(self, alarm_id: str) -> bool:
+        try:
+            result = await self.alarms_collection.delete_one({"_id": ObjectId(alarm_id)})
+            return result.deleted_count > 0
+        except:
+            return False
 
-    async def acknowledge_alarm(self, alarm_id: int) -> bool:
-        result = await self.alarms_collection.update_one(
-            {"_id": ObjectId(str(alarm_id))},
-            {"$set": {"acknowledged": True}}
-        )
-        return result.modified_count > 0
+    async def acknowledge_alarm(self, alarm_id: str) -> bool:
+        try:
+            result = await self.alarms_collection.update_one(
+                {"_id": ObjectId(alarm_id)},
+                {"$set": {"acknowledged": True}}
+            )
+            return result.modified_count > 0
+        except:
+            return False
 
     async def create_user(self, user: UserCreate) -> UserResponse:
         user_dict = await self.data_adapter.convert_to_storage_format(user)
-        user_dict["is_active"] = True
-        # TODO: Hash password
         result = await self.users_collection.insert_one(user_dict)
         created_user = await self.users_collection.find_one({"_id": result.inserted_id})
         return await self.data_adapter.convert_from_storage_format(created_user)
 
-    async def get_user(self, user_id: int) -> Optional[UserResponse]:
-        user = await self.users_collection.find_one({"_id": ObjectId(str(user_id))})
-        if user:
-            return await self.data_adapter.convert_from_storage_format(user)
-        return None
+    async def get_user(self, user_id: str) -> Optional[UserResponse]:
+        try:
+            user = await self.users_collection.find_one({"_id": ObjectId(user_id)})
+            if user:
+                return await self.data_adapter.convert_from_storage_format(user)
+            return None
+        except:
+            return None
 
     async def get_user_by_email(self, email: str) -> Optional[UserResponse]:
-        user = await self.users_collection.find_one({"email": email})
-        if user:
-            return await self.data_adapter.convert_from_storage_format(user)
-        return None
+        try:
+            user = await self.users_collection.find_one({"email": email})
+            if user:
+                return await self.data_adapter.convert_from_storage_format(user)
+            return None
+        except:
+            return None
 
     async def get_all_users(self, skip: int = 0, limit: int = 100) -> List[UserResponse]:
         cursor = self.users_collection.find().skip(skip).limit(limit)

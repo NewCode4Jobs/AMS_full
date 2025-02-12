@@ -47,6 +47,28 @@ class SQLiteDataAdapter(DataAdapter):
         return Alarm(**data)
 
 
+class PostgresDataAdapter(DataAdapter):
+    """PostgreSQL specific data adapter implementation."""
+    
+    async def convert_to_storage_format(self, alarm: Alarm) -> dict:
+        return alarm.dict(exclude_none=True)
+
+    async def convert_from_storage_format(self, data: Any) -> Alarm:
+        """Convert storage format to Alarm model.
+        
+        Args:
+            data: Can be a dict, Record object, or SQLAlchemy model instance
+        """
+        if hasattr(data, '_mapping'):  # asyncpg Record object
+            data = dict(data._mapping)
+        elif hasattr(data, '__dict__'):  # SQLAlchemy model
+            data = {
+                k: v for k, v in data.__dict__.items()
+                if not k.startswith('_sa_') and k != 'metadata'
+            }
+        return Alarm(**data)
+
+
 class DatabaseConfig:
     """Database configuration container."""
     
@@ -68,20 +90,37 @@ def create_repository(db_type: str, connection: Any, data_adapter: DataAdapter):
     elif db_type == "sqlite":
         from ..repositories.sqlite_repository import SQLiteRepository
         return SQLiteRepository(connection, data_adapter)
+    elif db_type == "postgres":
+        from ..repositories.postgres_repository import PostgresRepository
+        return PostgresRepository(connection, data_adapter)
     else:
         raise ValueError(f"Unsupported database type: {db_type}")
 
 
 def get_data_adapter(db_type: str) -> DataAdapter:
-    """Get the appropriate data adapter based on database type."""
+    """
+    Get the appropriate data adapter instance for the specified database type.
+    
+    Args:
+        db_type: Type of database ('mongodb', 'sqlite', or 'postgres')
+        
+    Returns:
+        DataAdapter instance for the specified database type
+        
+    Raises:
+        ValueError: If an unsupported database type is specified
+    """
     adapters = {
         "mongodb": MongoDataAdapter,
         "sqlite": SQLiteDataAdapter,
+        "postgres": PostgresDataAdapter,
     }
-    adapter_class = adapters.get(db_type)
-    if not adapter_class:
-        raise ValueError(f"No adapter found for database type: {db_type}")
-    return adapter_class()
+    
+    db_type = db_type.lower()
+    if db_type not in adapters:
+        raise ValueError(f"Unsupported database type: {db_type}")
+        
+    return adapters[db_type]()
 
 
 @lru_cache()
