@@ -13,7 +13,8 @@ dependencies = [
     "python-jose>=3.3.0",
     "passlib>=1.7.4",
     "python-multipart>=0.0.6",
-    "pydantic[email]"
+    "pydantic[email]",
+    "pymongo>=4.11.1",
 ]
 
 [project.optional-dependencies]

@@ -9,7 +9,10 @@ class AlarmManager {
         this.selectedAlarm = null;
         
         this.setupEventListeners();
-        this.fetchAlarms();
+    }
+
+    async init() {
+        await this.fetchAlarms();
     }
 
     setupEventListeners() {
@@ -177,3 +180,4 @@ class AlarmManager {
 }
 
 const alarmManager = new AlarmManager();
+alarmManager.init();

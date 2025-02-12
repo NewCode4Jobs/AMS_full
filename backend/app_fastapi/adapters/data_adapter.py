@@ -1,75 +1,94 @@
-from typing import Protocol, Optional, AsyncGenerator
-from sqlalchemy.orm import Session
-from motor.motor_asyncio import AsyncIOMotorClient
+from typing import Protocol, Optional, AsyncGenerator, Type, Dict, Any
+from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
+from bson import ObjectId
 from functools import lru_cache
 from contextlib import asynccontextmanager
 
 from ..models.alarm import Alarm
 from ..core.config import settings
-from ..database.connection import SessionLocal
-from ..repositories.base import BaseRepository
-from ..repositories.postgres_repository import PostgresRepository
-from ..repositories.sqlite_repository import SQLiteRepository
-from ..repositories.mongo_repository import MongoRepository
+
 
 class DataAdapter(Protocol):
-    async def convert_to_storage_format(self, alarm: Alarm) -> dict:
+    """Protocol defining the data adapter interface."""
+    
+    async def convert_to_storage_format(self, data: Any) -> dict:
+        """Convert domain model to storage format."""
         pass
+
+    async def convert_from_storage_format(self, data: dict) -> Any:
+        """Convert storage format to domain model."""
+        pass
+
+
+class MongoDataAdapter(DataAdapter):
+    """MongoDB specific data adapter implementation."""
+    
+    async def convert_to_storage_format(self, alarm: Alarm) -> dict:
+        """Convert Alarm model to MongoDB document format."""
+        alarm_dict = alarm.dict(exclude_none=True)
+        if alarm_dict.get('id'):
+            alarm_dict['_id'] = ObjectId(str(alarm_dict.pop('id')))
+        return alarm_dict
 
     async def convert_from_storage_format(self, data: dict) -> Alarm:
-        pass
+        """Convert MongoDB document to Alarm model."""
+        if '_id' in data:
+            data['id'] = str(data.pop('_id'))
+        return Alarm(**data)
 
-class DatabaseAdapter:
-    """Database adapter to manage connections and repository selection."""
+
+class SQLiteDataAdapter(DataAdapter):
+    """SQLite specific data adapter implementation."""
     
-    def __init__(self):
-        self._postgres_engine = None
-        self._mongo_client: Optional[AsyncIOMotorClient] = None
-        
-    async def init_postgres(self) -> None:
-        """Initialize PostgreSQL connection."""
-        if not self._postgres_engine:
-            from sqlalchemy.ext.asyncio import create_async_engine
-            self._postgres_engine = create_async_engine(settings.POSTGRES_URL)
+    async def convert_to_storage_format(self, alarm: Alarm) -> dict:
+        return alarm.dict(exclude_none=True)
 
-    async def init_mongodb(self) -> None:
-        """Initialize MongoDB connection."""
-        if not self._mongo_client:
-            self._mongo_client = AsyncIOMotorClient(settings.MONGODB_URL)
+    async def convert_from_storage_format(self, data: dict) -> Alarm:
+        return Alarm(**data)
 
-    @asynccontextmanager
-    async def get_repository(self) -> AsyncGenerator[BaseRepository, None]:
-        """Get the appropriate repository based on configuration."""
-        try:
-            if settings.DB_TYPE == "sqlite":
-                db = SessionLocal()
-                try:
-                    yield SQLiteRepository(db)
-                finally:
-                    db.close()
-            elif settings.DB_TYPE == "postgres":
-                db = SessionLocal()
-                try:
-                    yield PostgresRepository(db)
-                finally:
-                    db.close()
-            elif settings.DB_TYPE == "mongodb":
-                if not self._mongo_client:
-                    await self.init_mongodb()
-                yield MongoRepository(self._mongo_client[settings.MONGODB_DB_NAME])
-            else:
-                raise ValueError(f"Unsupported database type: {settings.DB_TYPE}")
-        except Exception as e:
-            raise e
 
-    async def close(self):
-        """Close all database connections."""
-        if self._mongo_client:
-            self._mongo_client.close()
-        if self._postgres_engine:
-            await self._postgres_engine.dispose()
+class DatabaseConfig:
+    """Database configuration container."""
+    
+    def __init__(self, db_type: str, url: str, db_name: str):
+        self.db_type = db_type
+        self.url = url
+        self.db_name = db_name
+
+
+def create_repository(db_type: str, connection: Any, data_adapter: DataAdapter):
+    """
+    Factory function to create a repository instance.
+    This function should be called by your dependency injection system.
+    """
+    # Import repositories here to avoid circular imports
+    if db_type == "mongodb":
+        from ..repositories.mongo_repository import MongoRepository
+        return MongoRepository(connection, data_adapter)
+    elif db_type == "sqlite":
+        from ..repositories.sqlite_repository import SQLiteRepository
+        return SQLiteRepository(connection, data_adapter)
+    else:
+        raise ValueError(f"Unsupported database type: {db_type}")
+
+
+def get_data_adapter(db_type: str) -> DataAdapter:
+    """Get the appropriate data adapter based on database type."""
+    adapters = {
+        "mongodb": MongoDataAdapter,
+        "sqlite": SQLiteDataAdapter,
+    }
+    adapter_class = adapters.get(db_type)
+    if not adapter_class:
+        raise ValueError(f"No adapter found for database type: {db_type}")
+    return adapter_class()
+
 
 @lru_cache()
-def get_db_adapter() -> DatabaseAdapter:
-    """Get a singleton instance of DatabaseAdapter."""
-    return DatabaseAdapter()
+def get_db_config() -> DatabaseConfig:
+    """Get database configuration from settings."""
+    return DatabaseConfig(
+        db_type=settings.DB_TYPE,
+        url=settings.MONGODB_URL if settings.DB_TYPE == "mongodb" else settings.POSTGRES_URL,
+        db_name=settings.MONGODB_DB_NAME if settings.DB_TYPE == "mongodb" else settings.DB_NAME
+    )
